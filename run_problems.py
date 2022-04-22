@@ -274,4 +274,4 @@ edge_length = [24, 31, 37, 43, 48, 54, 60, 63]
 for i, j in enumerate([12, 12, 12, 12, 12, 12, 12, 12]):
     if j > nqubs:
         break 
-    run_graph(V[:j], E[:edge_length[i]], 3, solver, simulator=simulator, quantum_instance=quantum_instance, nQubs=nqubs)
+    run_graph(V[:j], E[:edge_length[i]], 4, solver, simulator=simulator, quantum_instance=quantum_instance, nQubs=nqubs)
