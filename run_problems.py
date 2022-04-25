@@ -175,9 +175,9 @@ else:
         print(str(sys.argv[1]) + " solver not implemented; using z3 solver")
         solver = 'z3'
 if len(sys.argv) < 4:
-    simulator = True
-else:
     simulator = False
+else:
+    simulator = True
 
 if solver == 'qiskit':    
     qiskit.IBMQ.load_account()
