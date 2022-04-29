@@ -42,6 +42,7 @@ def solve(env, quantum_instance=None, hard_scale=None, optimizer=COBYLA()):
     ret.solutions.append({k: v != 0 for k, v in result.variables_dict.items() if k in env.ports()})
     ret.tallies = [1]
     try:
+        device = quantum_instance.backend
         jobs = device.jobs(limit=50, start_datetime=time1, end_datetime=time2)
         qasm = jobs[2].circuits()[0].qasm()
         count = 0
