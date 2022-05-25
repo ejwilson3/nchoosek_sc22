@@ -4,8 +4,10 @@
 # an NchooseK environment            #
 ######################################
 
+from nchoosek import solver
 from nchoosek.solver import construct_qubo
 import z3
+import datetime
 
 
 def direct_solve(env):
@@ -37,11 +39,14 @@ def direct_solve(env):
 
     # Solve the system of constraints, and return a dictionary mapping port
     # names to Boolean values.
+    time1 = datetime.datetime.now()
     if s.check() != z3.sat:
         return None
     model = s.model()
-    ret = env.Result()
+    ret = solver.Result()
     ret.solutions = [{k: bool(model[v].as_long()) for k, v in nck_to_z3.items()}]
+    time2 = datetime.datetime.now()
+    ret.times = (time1, time2)
     return ret
 
 
@@ -76,7 +81,7 @@ def qubo_solve(env, hard_scale):
         return None
     model = s.model()
     ports = env.ports()
-    ret = env.Result()
+    ret = solver.Result()
     ret.solutions = [{k: bool(model[v].as_long()) for k, v in nck_to_z3.items()}]
     return ret
 
