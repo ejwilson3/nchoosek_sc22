@@ -258,7 +258,10 @@ def run_graph(V, E, nCliques, solver, simulator=False, color=True, time_filename
             good_counts.append(v)
             n_qubs.append(res.qubits)
             depths.append(res.depth)
-            n_jobs.append(len(res.jobIDs))
+            if res.jobIDs:
+                n_jobs.append(len(res.jobIDs))
+            else:
+                n_jobs.append(0)
             job_ids.append(res.jobIDs)
             times.append(datetime.datetime.now())
         else:
@@ -360,14 +363,13 @@ else:
     if solver != 'qiskit' and solver != 'ocean' and solver != 'z3':
         print(str(sys.argv[1]) + " solver not implemented; using z3 solver")
         solver = 'z3'
-if len(sys.argv) < 4:
+if len(sys.argv) < 3:
     simulator = False
 else:
     simulator = True
 
 if solver == 'qiskit':    
     qiskit.IBMQ.load_account()
-    # provider = qiskit.IBMQ.get_provider(hub='ibm-q-ncsu', group='nc-state', project='noise')
     provider = qiskit.IBMQ.get_provider(hub='ibm-q', group='open', project='main')
     if simulator:
         device = qiskit.Aer.get_backend('qasm_simulator')
@@ -440,7 +442,8 @@ edge_length = [3, 8, 13, 18, 23, 28, 37, 42, 47, 52, 57, 62, 67, 72, 80, 90, 100
 for i, j in enumerate([3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 37, 41, 45, 50, 55, 60, 65, 75, 85, 95, 105]):
     if j > nqubs:
         break 
-    run_graph(V[:j], E[:edge_length[i]], i+1, solver, simulator=simulator, quantum_instance=quantum_instance, nQubs=nqubs)
+    run_graph(V[:j], E[:edge_length[i]], i+1, solver, simulator=simulator,
+              quantum_instance=quantum_instance, nQubs=nqubs)
 
 E = [('a', 'b'), ('a', 'c'), ('b', 'c'), ('d', 'e'), ('d', 'f'), 
      ('e', 'f'), ('a', 'd'), ('b', 'e'), ('g', 'h'), ('h', 'i'),
