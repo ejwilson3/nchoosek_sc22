@@ -36,3 +36,9 @@ Finally, run the appropriate script:
 
 NOTE: the plots might fail if there aren't enough data points for qiskit. This
 is normal.
+
+
+To obtain more detailed timing information on DWave, go to your LEAP page and
+inspect the jobs you have run there. To get detailed timing information for
+Qiskit, run:
+`python3 timing.py`

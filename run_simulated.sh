@@ -3,7 +3,7 @@ echo '========================================='
 echo 'Installing NchooseK'
 echo '========================================='
 cd NchooseK
-python setup.py install
+python3 setup.py bdist_egg
 cd ../
 echo '# valid, vars, cons, qubits, optimal, jobs, depth, problem' > 0_ocean_output.dat
 echo '# valid, vars, cons, qubits, optimal, jobs, depth, problem' > 1_ocean_output.dat
@@ -29,16 +29,16 @@ echo '# valid, vars, cons, qubits, optimal, jobs, depth, problem' > 6_z3_output.
 echo '========================================='
 echo 'Running with Ocean'
 echo '========================================='
-python run_problems.py ocean simulator
+python3 run_problems.py ocean simulator
 echo 'Running with Qiskit'
 echo '========================================='
-python run_problems.py qiskit simulator
+python3 run_problems.py qiskit simulator
 echo 'Running with Z3'
 echo '========================================='
-python run_problems.py z3
+python3 run_problems.py z3
 echo 'Creating Plots'
 echo '========================================='
-python rearrange.py
+python3 rearrange.py
 gnuplot plots.plot
 echo 'Done!'
 echo '========================================='

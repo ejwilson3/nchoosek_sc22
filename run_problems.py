@@ -3,6 +3,7 @@ import sys
 import qiskit
 from qiskit.utils import QuantumInstance
 import datetime
+sys.path.append('NchooseK')
 import nchoosek
 import re
 import random
@@ -108,6 +109,7 @@ def SAT3(cons):
 def run_env(env, check_env, solver, simulator, quantum_instance, num_reads):
     if solver == 'qiskit':
         res = env.solve(solver=solver, quantum_instance=quantum_instance)
+        # res = time_run(env, quantum_instance)
     elif solver == 'ocean':
         if simulator:
             res = env.solve(solver=solver, sampler=SimulatedAnnealingSampler(), num_reads=num_reads)
@@ -121,7 +123,6 @@ def run_env(env, check_env, solver, simulator, quantum_instance, num_reads):
     # Get the classically optimized solution; this is needed in order to test whether our result is the actual maximum or minimum
     ch = check_env.solve(solver='z3')
     if not ch or not res:
-        print(check_env)
         res = None
         count = None
         v = None
@@ -153,6 +154,11 @@ def write_out(times, results, total_counts, envs, good_counts, n_qubs, opt_count
         for idx, result in enumerate(results):
             f.write(str(result) + "\n")
             f.write(str(total_counts[idx]) + "\n")
+    print(str(good_counts) + ", " + \
+          str(n_qubs) + ", " + \
+          str(opt_counts) + ", " + \
+          str(n_jobs) + ", " + \
+          str(depths) + ", ")
     for idx, env in enumerate(envs):
         good = []
         bad = []
@@ -245,6 +251,8 @@ def run_graph(V, E, nCliques, solver, simulator=False, color=True, time_filename
             opt_counts.append(None)
             good_counts.append(None)
             n_qubs.append(None)
+            n_jobs.append(None)
+            depths.append(None)
             times.append(datetime.datetime.now())
             continue
         # Run the actual problem and add it to the lists
@@ -280,7 +288,10 @@ def run_graph(V, E, nCliques, solver, simulator=False, color=True, time_filename
 
     return envs
         
-def run_other(E, S, constraints, solver, simulator=False, time_filename='times.dat', results_filename='results.dat', data_filename='output.dat', quantum_instance=None, num_reads=100):
+def run_other(E, S, constraints, solver, simulator=False,
+              time_filename='times.dat', results_filename='results.dat',
+              data_filename='output.dat', quantum_instance=None,
+              num_reads=100):
     # list of environments
     envs = []
     # list of lists of results
@@ -334,7 +345,10 @@ def run_other(E, S, constraints, solver, simulator=False, time_filename='times.d
             total_counts.append(None)
             opt_counts.append(None)
             good_counts.append(None)
+            depths.append(None)
             n_qubs.append(None)
+            n_jobs.append(None)
+            job_ids.append(None)
             times.append(datetime.datetime.now())
             continue
         # Run the actual problem and add it to the lists
@@ -347,7 +361,10 @@ def run_other(E, S, constraints, solver, simulator=False, time_filename='times.d
         good_counts.append(v)
         n_qubs.append(res.qubits)
         depths.append(res.depth)
-        n_jobs.append(len(res.jobIDs))
+        if res.jobIDs:
+            n_jobs.append(len(res.jobIDs))
+        else:
+            n_jobs.append(0)
         job_ids.append(res.jobIDs)
         times.append(datetime.datetime.now())
     write_out(times, results, total_counts, envs, good_counts,
@@ -356,157 +373,161 @@ def run_other(E, S, constraints, solver, simulator=False, time_filename='times.d
 
     return envs
 
-if len(sys.argv) == 1:
-    solver = 'z3'
-else:
-    solver = str(sys.argv[1])
-    if solver != 'qiskit' and solver != 'ocean' and solver != 'z3':
-        print(str(sys.argv[1]) + " solver not implemented; using z3 solver")
+if __name__ == '__main__':
+    if len(sys.argv) == 1:
         solver = 'z3'
-if len(sys.argv) < 3:
-    simulator = False
-else:
-    simulator = True
-
-if solver == 'qiskit':    
-    qiskit.IBMQ.load_account()
-    provider = qiskit.IBMQ.get_provider(hub='ibm-q', group='open', project='main')
-    if simulator:
-        device = qiskit.Aer.get_backend('qasm_simulator')
-        # device = provider.get_backend('ibmq_qasm_simulator')
     else:
-#########################Change machine here####################################
-        device = provider.get_backend('ibmq_guadalupe')
-################################################################################
-    nqubs = device.configuration().n_qubits
-    quantum_instance = QuantumInstance(device)
-else:
-    quantum_instance = None
-    if solver == 'ocean':
-        nqubs = 3000
+        solver = str(sys.argv[1])
+        if solver != 'qiskit' and solver != 'ocean' and solver != 'z3':
+            print(str(sys.argv[1]) + " solver not implemented; using z3 solver")
+            solver = 'z3'
+    if len(sys.argv) < 3:
+        simulator = False
     else:
-        nqubs = 1000
+        simulator = True
 
-V = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-     'n', 'o', 'p', 'q', 'r', 'x', 'y', 'z', 's', 't', 'u', 'v', 'w',
-     'aa', 'bb', 'cc', 'dd', 'ee', 'ff', 'gg', 'hh', 'ii', 'jj', 'kk', 'll', 'mm', 
-     'nn', 'oo', 'pp', 'qq', 'rr', 'ss', 'tt', 'uu', 'vv', 'ww', 'xx', 'yy', 'zz',
-     'ab', 'ac', 'ad', 'ae', 'af', 'ag', 'ah', 'ai', 'aj', 'ak', 'al', 'am', 'an',
-     'ao', 'ap', 'aq', 'ar', 'as', 'at', 'au', 'av', 'aw', 'ax', 'ay', 'az',
-     'ba', 'bc', 'bd', 'be', 'bf', 'bg', 'bh', 'bi', 'bj', 'bk', 'bl', 'bm', 'bn',
-     'bo', 'bp', 'bq', 'br', 'bs', 'bt', 'bu', 'bv', 'bw', 'bx', 'by', 'bz',
-     'ca', 'cb', 'cd']
-E = [('a', 'b'), ('a', 'c'), ('b', 'c'), ('d', 'e'), ('d', 'f'), 
-     ('e', 'f'), ('a', 'd'), ('b', 'e'), ('g', 'h'), ('h', 'i'),
-     ('g', 'i'), ('g', 'b'), ('h', 'c'), ('j', 'k'), ('j', 'l'),
-     ('k', 'l'), ('j', 'c'), ('k', 'a'), ('m', 'n'), ('n', 'o'),
-     ('m', 'o'), ('m', 'f'), ('n', 'f'), ('p', 'r'), ('p', 'q'),
-     ('q', 'r'), ('p', 'i'), ('q', 'i'), ('x', 'p'), ('x', 'q'),
-     ('x', 'r'), ('y', 'm'), ('y', 'n'), ('y', 'o'), ('z', 'j'),
-     ('z', 'k'), ('z', 'l'), ('s', 'n'), ('t', 'i'), ('s', 't'),
-     ('s', 'u'), ('t', 'u'), ('v', 'w'), ('v', 'aa'), ('w', 'aa'),
-     ('v', 'a'), ('w', 'k'), ('bb', 'cc'), ('bb', 'dd'), ('cc', 'dd'),
-     ('bb', 'aa'), ('cc', 's'), ('ee', 'ff'), ('ee', 'gg'), ('ff', 'gg'),
-     ('ee', 'h'), ('ff', 'r'), ('hh', 'ii'), ('ii', 'jj'), ('jj', 'kk'),
-     ('kk', 'hh'), ('jj', 'j'), ('kk', 'll'), ('ll', 'mm'), ('mm', 'nn'),
-     ('nn', 'oo'), ('oo', 'll'), ('pp', 'qq'), ('qq', 'rr'), ('rr', 'ss'),
-     ('ss', 'pp'), ('qq', 'z'), ('tt', 'uu'), ('vv', 'ww'), ('ww', 'xx'),
-     ('uu', 'vv'), ('xx', 'tt'), ('tt', 'ww'), ('vv', 'r'), ('xx', 'o'),
-     ('yy', 'zz'), ('zz', 'ab'), ('ab', 'ac'), ('ac', 'ad'), ('ad', 'yy'),
-     ('yy', 'ab'), ('yy', 'ad'), ('zz', 'ac'), ('ab', 'b'), ('ad', 'l'),
-     ('ae', 'af'), ('af', 'ag'), ('ag', 'ah'), ('ah', 'ai'), ('ai', 'ae'),
-     ('ae', 'ag'), ('ae', 'ah'), ('af', 'ai'), ('ag', 'g'), ('ah', 'h'),
-     ('aj', 'ak'), ('ak', 'al'), ('al', 'am'), ('am', 'an'), ('an', 'aj'),
-     ('aj', 'al'), ('aj', 'am'), ('al', 'll'), ('am', 'mm'), ('ak', 'an'),
-     ('ao', 'ap'), ('ap', 'aq'), ('aq', 'ar'), ('ar', 'as'), ('at', 'au'),
-     ('au', 'av'), ('aw', 'ax'), ('av', 'aw'), ('ax', 'ao'), ('as', 'at'),
-     ('ao', 'ar'), ('ap', 'as'), ('aq', 'at'), ('ar', 'au'), ('as', 'av'),
-     ('at', 'aw'), ('au', 'ax'), ('av', 'ao'), ('aw', 'ap'), ('ax', 'aq'),
-     ('ao', 'oo'), ('aq', 'qq'), ('as', 'ss'), ('au', 'uu'), ('aw', 'ww'),
-     ('ay', 'az'), ('az', 'ba'), ('ba', 'bc'), ('bc', 'bd'), ('bi', 'ay'),
-     ('bd', 'be'), ('be', 'bf'), ('bf', 'bg'), ('bg', 'bh'), ('bh', 'bi'),
-     ('ay', 'bc'), ('az', 'bd'), ('ba', 'be'), ('bc', 'bf'), ('bd', 'bg'),
-     ('be', 'bh'), ('bf', 'bi'), ('bg', 'ay'), ('bh', 'az'), ('bi', 'bc'),
-     ('ay', 'yy'), ('ba', 'aa'), ('bd', 'dd'), ('bf', 'ff'), ('bh', 'hh'),
-     ('bj', 'bk'), ('bk', 'bl'), ('bl', 'bm'), ('bm', 'bn'), ('bn', 'bo'),
-     ('bo', 'bp'), ('bp', 'bq'), ('bq', 'br'), ('br', 'bs'), ('bs', 'bj'),
-     ('bj', 'bm'), ('bk', 'bn'), ('bl', 'bo'), ('bm', 'bp'), ('bn', 'bq'),
-     ('bo', 'br'), ('bp', 'bs'), ('bq', 'bj'), ('br', 'bk'), ('bs', 'bl'),
-     ('bj', 'jj'), ('bl', 'al'), ('bn', 'an'), ('bp', 'ap'), ('bs', 'as'),
-     ('bt', 'bu'), ('bu', 'bv'), ('bv', 'bw'), ('bw', 'bx'), ('bx', 'by'),
-     ('by', 'bz'), ('bz', 'ca'), ('ca', 'cb'), ('cb', 'cd'), ('cd', 'bt'),
-     ('bt', 'bw'), ('bu', 'bx'), ('bv', 'by'), ('bw', 'bz'), ('bx', 'ca'),
-     ('by', 'cb'), ('bz', 'cd'), ('ca', 'bt'), ('cb', 'bu'), ('cd', 'bv'),
-     ('bt', 'at'), ('bv', 'av'), ('bx', 'ax'), ('bz', 'az'), ('cb', 'ab')]
-edge_length = [3, 8, 13, 18, 23, 28, 37, 42, 47, 52, 57, 62, 67, 72, 80, 90, 100, 110, 135, 160, 185, 210]
-for i, j in enumerate([3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 37, 41, 45, 50, 55, 60, 65, 75, 85, 95, 105]):
-    if j > nqubs:
-        break 
-    run_graph(V[:j], E[:edge_length[i]], i+1, solver, simulator=simulator,
-              quantum_instance=quantum_instance, nQubs=nqubs)
-
-E = [('a', 'b'), ('a', 'c'), ('b', 'c'), ('d', 'e'), ('d', 'f'), 
-     ('e', 'f'), ('a', 'd'), ('b', 'e'), ('g', 'h'), ('h', 'i'),
-     ('g', 'i'), ('g', 'b'), ('h', 'c'), ('j', 'k'), ('j', 'l'),
-     ('k', 'l'), ('j', 'c'), ('k', 'a'), ('i', 'l'), ('f', 'l'),
-     ('f', 'i'), ('j', 'd'), ('j', 'g'), ('g', 'd'), ('k', 'e'),
-     ('k', 'h'), ('e', 'h'), ('l', 'a'), ('c', 'd'), ('f', 'g'), 
-     ('i', 'j'), ('a', 'i'), ('b', 'l'), ('c', 'f'), ('b', 'h'),
-     ('b', 'k'), ('e', 'g'), ('l', 'c'), ('f', 'h'), ('i', 'k'),
-     ('a', 'g'), ('d', 'i'), ('j', 'e'), ('j', 'b'), ('a', 'e'),
-     ('c', 'g'), ('g', 'k'), ('g', 'l'), ('d', 'h'), ('f', 'a'),
-     ('i', 'c'), ('d', 'k'), ('b', 'f'), ('l', 'h'), ('b', 'i'),
-     ('c', 'k'), ('i', 'e'), ('f', 'j'), ('b', 'd'), ('c', 'e'),
-     ('f', 'k'), ('l', 'd'), ('l', 'e')]
-edge_length = [24, 31, 37, 43, 48, 54, 60, 63]
-for i, j in enumerate([12, 12, 12, 12, 12, 12, 12, 12]):
-    if j > nqubs:
-        break 
-    if i > 2:
-        run_graph(V[:j], E[:edge_length[i]], 4, solver, simulator,
-                  False, quantum_instance=quantum_instance, nQubs=nqubs)
+    if solver == 'qiskit':    
+        qiskit.IBMQ.load_account()
+        provider = qiskit.IBMQ.get_provider(hub='ibm-q', group='open', project='main')
+        if simulator:
+            device = qiskit.Aer.get_backend('qasm_simulator')
+            nqubs = 21
+            # device = provider.get_backend('ibmq_qasm_simulator')
+        else:
+    #########################Change machine here####################################
+            device = provider.get_backend('ibmq_guadalupe')
+            nqubs = device.configuration().n_qubits
+    ################################################################################
+        quantum_instance = QuantumInstance(device)
     else:
-        run_graph(V[:j], E[:edge_length[i]], 4, solver, simulator=simulator,
-                  quantum_instance=quantum_instance, nQubs=nqubs)
+        quantum_instance = None
+        if solver == 'ocean':
+            if simulator:
+                nqubs = 200
+            else:
+                nqubs = 1000
+        else:
+            nqubs = 400
 
-E = []
-S = {}
-bins = []
-limit = 60
-step = 3
-seed = 6
-random.seed(seed)
-for i in range(5, limit, step):
-    constraints = []
-    for j in range(step):
-        bins.append(str(i-j))
-        E.append('v' + str(i-j))
-        for sub in S:
-            if int(sub[1:])%step == 0:
+    V = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+        'n', 'o', 'p', 'q', 'r', 'x', 'y', 'z', 's', 't', 'u', 'v', 'w',
+        'aa', 'bb', 'cc', 'dd', 'ee', 'ff', 'gg', 'hh', 'ii', 'jj', 'kk', 'll', 'mm', 
+        'nn', 'oo', 'pp', 'qq', 'rr', 'ss', 'tt', 'uu', 'vv', 'ww', 'xx', 'yy', 'zz',
+        'ab', 'ac', 'ad', 'ae', 'af', 'ag', 'ah', 'ai', 'aj', 'ak', 'al', 'am', 'an',
+        'ao', 'ap', 'aq', 'ar', 'as', 'at', 'au', 'av', 'aw', 'ax', 'ay', 'az',
+        'ba', 'bc', 'bd', 'be', 'bf', 'bg', 'bh', 'bi', 'bj', 'bk', 'bl', 'bm', 'bn',
+        'bo', 'bp', 'bq', 'br', 'bs', 'bt', 'bu', 'bv', 'bw', 'bx', 'by', 'bz',
+        'ca', 'cb', 'cd']
+    E = [('a', 'b'), ('a', 'c'), ('b', 'c'), ('d', 'e'), ('d', 'f'), 
+        ('e', 'f'), ('a', 'd'), ('b', 'e'), ('g', 'h'), ('h', 'i'),
+        ('g', 'i'), ('g', 'b'), ('h', 'c'), ('j', 'k'), ('j', 'l'),
+        ('k', 'l'), ('j', 'c'), ('k', 'a'), ('m', 'n'), ('n', 'o'),
+        ('m', 'o'), ('m', 'f'), ('n', 'f'), ('p', 'r'), ('p', 'q'),
+        ('q', 'r'), ('p', 'i'), ('q', 'i'), ('x', 'p'), ('x', 'q'),
+        ('x', 'r'), ('y', 'm'), ('y', 'n'), ('y', 'o'), ('z', 'j'),
+        ('z', 'k'), ('z', 'l'), ('s', 'n'), ('t', 'i'), ('s', 't'),
+        ('s', 'u'), ('t', 'u'), ('v', 'w'), ('v', 'aa'), ('w', 'aa'),
+        ('v', 'a'), ('w', 'k'), ('bb', 'cc'), ('bb', 'dd'), ('cc', 'dd'),
+        ('bb', 'aa'), ('cc', 's'), ('ee', 'ff'), ('ee', 'gg'), ('ff', 'gg'),
+        ('ee', 'h'), ('ff', 'r'), ('hh', 'ii'), ('ii', 'jj'), ('jj', 'kk'),
+        ('kk', 'hh'), ('jj', 'j'), ('kk', 'll'), ('ll', 'mm'), ('mm', 'nn'),
+        ('nn', 'oo'), ('oo', 'll'), ('pp', 'qq'), ('qq', 'rr'), ('rr', 'ss'),
+        ('ss', 'pp'), ('qq', 'z'), ('tt', 'uu'), ('vv', 'ww'), ('ww', 'xx'),
+        ('uu', 'vv'), ('xx', 'tt'), ('tt', 'ww'), ('vv', 'r'), ('xx', 'o'),
+        ('yy', 'zz'), ('zz', 'ab'), ('ab', 'ac'), ('ac', 'ad'), ('ad', 'yy'),
+        ('yy', 'ab'), ('yy', 'ad'), ('zz', 'ac'), ('ab', 'b'), ('ad', 'l'),
+        ('ae', 'af'), ('af', 'ag'), ('ag', 'ah'), ('ah', 'ai'), ('ai', 'ae'),
+        ('ae', 'ag'), ('ae', 'ah'), ('af', 'ai'), ('ag', 'g'), ('ah', 'h'),
+        ('aj', 'ak'), ('ak', 'al'), ('al', 'am'), ('am', 'an'), ('an', 'aj'),
+        ('aj', 'al'), ('aj', 'am'), ('al', 'll'), ('am', 'mm'), ('ak', 'an'),
+        ('ao', 'ap'), ('ap', 'aq'), ('aq', 'ar'), ('ar', 'as'), ('at', 'au'),
+        ('au', 'av'), ('aw', 'ax'), ('av', 'aw'), ('ax', 'ao'), ('as', 'at'),
+        ('ao', 'ar'), ('ap', 'as'), ('aq', 'at'), ('ar', 'au'), ('as', 'av'),
+        ('at', 'aw'), ('au', 'ax'), ('av', 'ao'), ('aw', 'ap'), ('ax', 'aq'),
+        ('ao', 'oo'), ('aq', 'qq'), ('as', 'ss'), ('au', 'uu'), ('aw', 'ww'),
+        ('ay', 'az'), ('az', 'ba'), ('ba', 'bc'), ('bc', 'bd'), ('bi', 'ay'),
+        ('bd', 'be'), ('be', 'bf'), ('bf', 'bg'), ('bg', 'bh'), ('bh', 'bi'),
+        ('ay', 'bc'), ('az', 'bd'), ('ba', 'be'), ('bc', 'bf'), ('bd', 'bg'),
+        ('be', 'bh'), ('bf', 'bi'), ('bg', 'ay'), ('bh', 'az'), ('bi', 'bc'),
+        ('ay', 'yy'), ('ba', 'aa'), ('bd', 'dd'), ('bf', 'ff'), ('bh', 'hh'),
+        ('bj', 'bk'), ('bk', 'bl'), ('bl', 'bm'), ('bm', 'bn'), ('bn', 'bo'),
+        ('bo', 'bp'), ('bp', 'bq'), ('bq', 'br'), ('br', 'bs'), ('bs', 'bj'),
+        ('bj', 'bm'), ('bk', 'bn'), ('bl', 'bo'), ('bm', 'bp'), ('bn', 'bq'),
+        ('bo', 'br'), ('bp', 'bs'), ('bq', 'bj'), ('br', 'bk'), ('bs', 'bl'),
+        ('bj', 'jj'), ('bl', 'al'), ('bn', 'an'), ('bp', 'ap'), ('bs', 'as'),
+        ('bt', 'bu'), ('bu', 'bv'), ('bv', 'bw'), ('bw', 'bx'), ('bx', 'by'),
+        ('by', 'bz'), ('bz', 'ca'), ('ca', 'cb'), ('cb', 'cd'), ('cd', 'bt'),
+        ('bt', 'bw'), ('bu', 'bx'), ('bv', 'by'), ('bw', 'bz'), ('bx', 'ca'),
+        ('by', 'cb'), ('bz', 'cd'), ('ca', 'bt'), ('cb', 'bu'), ('cd', 'bv'),
+        ('bt', 'at'), ('bv', 'av'), ('bx', 'ax'), ('bz', 'az'), ('cb', 'ab')]
+    edge_length = [3, 8, 13, 18, 23, 28, 37, 42, 47, 52, 57, 62, 67, 72, 80, 90, 100, 110, 135, 160, 185, 210]
+    for i, j in enumerate([3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 37, 41, 45, 50, 55, 60, 65, 75, 85, 95, 105]):
+        if j > nqubs:
+            break 
+        run_graph(V[:j], E[:edge_length[i]], i+1, solver, simulator=simulator, quantum_instance=quantum_instance, nQubs=nqubs)
+
+    E = [('a', 'b'), ('a', 'c'), ('b', 'c'), ('d', 'e'), ('d', 'f'), 
+        ('e', 'f'), ('a', 'd'), ('b', 'e'), ('g', 'h'), ('h', 'i'),
+        ('g', 'i'), ('g', 'b'), ('h', 'c'), ('j', 'k'), ('j', 'l'),
+        ('k', 'l'), ('j', 'c'), ('k', 'a'), ('i', 'l'), ('f', 'l'),
+        ('f', 'i'), ('j', 'd'), ('j', 'g'), ('g', 'd'), ('k', 'e'),
+        ('k', 'h'), ('e', 'h'), ('l', 'a'), ('c', 'd'), ('f', 'g'), 
+        ('i', 'j'), ('a', 'i'), ('b', 'l'), ('c', 'f'), ('b', 'h'),
+        ('b', 'k'), ('e', 'g'), ('l', 'c'), ('f', 'h'), ('i', 'k'),
+        ('a', 'g'), ('d', 'i'), ('j', 'e'), ('j', 'b'), ('a', 'e'),
+        ('c', 'g'), ('g', 'k'), ('g', 'l'), ('d', 'h'), ('f', 'a'),
+        ('i', 'c'), ('d', 'k'), ('b', 'f'), ('l', 'h'), ('b', 'i'),
+        ('c', 'k'), ('i', 'e'), ('f', 'j'), ('b', 'd'), ('c', 'e'),
+        ('f', 'k'), ('l', 'd'), ('l', 'e')]
+    edge_length = [24, 31, 37, 43, 48, 54, 60, 63]
+    for i, j in enumerate([12, 12, 12, 12, 12, 12, 12, 12]):
+        if j > nqubs:
+            break 
+        if i > 2:
+            run_graph(V[:j], E[:edge_length[i]], 4, solver, simulator,
+                    False, quantum_instance=quantum_instance, nQubs=nqubs)
+        else:
+            run_graph(V[:j], E[:edge_length[i]], 4, solver, simulator=simulator,
+                    quantum_instance=quantum_instance, nQubs=nqubs)
+
+    E = []
+    S = {}
+    bins = []
+    limit = 60
+    step = 3
+    seed = 6
+    random.seed(seed)
+    for i in range(5, limit, step):
+        constraints = []
+        for j in range(step):
+            bins.append(str(i-j))
+            E.append('v' + str(i-j))
+            for sub in S:
+                if int(sub[1:])%step == 0:
+                    continue
+                if random.random() < .2:
+                    S[sub].append('v' + str(i-j))
+        for j in range(step):
+            if j == step-1:
+                var = []
+                for k in range(step):
+                    var.append('v' + str(i-k))
+                S['s' + str(i-j)] = var
                 continue
-            if random.random() < .2:
-                S[sub].append('v' + str(i-j))
-    for j in range(step):
-        if j == step-1:
-            var = []
-            for k in range(step):
-                var.append('v' + str(i-k))
-            S['s' + str(i-j)] = var
-            continue
-        S['s' + str(i-j)] = []
+            S['s' + str(i-j)] = []
+            for k in range(i):
+                if random.random() < .3:
+                    S['s' + str(i-j)].append('v' + str(k))
         for k in range(i):
-            if random.random() < .3:
-                S['s' + str(i-j)].append('v' + str(k))
-    for k in range(i):
-        a = '!' if random.random() < .5 else ""
-        b = '!' if random.random() < .5 else ""
-        c = '!' if random.random() < .5 else ""
-        choice = random.sample(bins, 3)
-        constraints.append([a + choice[0], b + choice[1], c + choice[2]])
-    if i > 18:
-        with open('inputs.dat', 'a') as f:
-            f.write(str(seed) + "\n")
-            f.write(str(E) + "\n")
-            f.write(str(S) + "\n")
-            f.write(str(constraints) + "\n")
-        run_other(E, S, constraints, solver, simulator=simulator, quantum_instance=quantum_instance)
+            a = '!' if random.random() < .5 else ""
+            b = '!' if random.random() < .5 else ""
+            c = '!' if random.random() < .5 else ""
+            choice = random.sample(bins, 3)
+            constraints.append([a + choice[0], b + choice[1], c + choice[2]])
+        if i > 18:
+            with open('inputs.dat', 'a') as f:
+                f.write(str(seed) + "\n")
+                f.write(str(E) + "\n")
+                f.write(str(S) + "\n")
+                f.write(str(constraints) + "\n")
+            run_other(E, S, constraints, solver, simulator=simulator, quantum_instance=quantum_instance)
