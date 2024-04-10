@@ -1,0 +1,15 @@
+# valid, vars, cons, qubits, optimal, jobs, depth, problem
+
+80, 5, 7, 12, 100, None, None, 7
+
+70, 10, 12, 23, 100, None, None, 7
+
+61, 15, 17, 37, 100, None, None, 7
+
+28, 23, 25, 51, 100, None, None, 7
+
+19, 26, 28, 69, 100, None, None, 7
+
+19, 26, 28, 77, 100, None, None, 7
+
+50, 26, 28, 78, 100, None, None, 7

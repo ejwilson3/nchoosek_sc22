@@ -1,0 +1,65 @@
+# valid, vars, cons, qubits, optimal, jobs, depth, problem
+
+100, 3, 6, 3, 99, None, None, 1
+
+100, 6, 14, 6, 96, None, None, 1
+
+100, 9, 22, 9, 91, None, None, 1
+
+100, 12, 30, 12, 85, None, None, 1
+
+100, 15, 38, 15, 64, None, None, 1
+
+100, 18, 46, 18, 60, None, None, 1
+
+100, 21, 58, 23, 37, None, None, 1
+
+100, 24, 66, 24, 45, None, None, 1
+
+98, 27, 74, 30, 14, None, None, 1
+
+99, 30, 82, 33, 14, None, None, 1
+
+100, 30, 82, 31, 10, None, None, 1
+
+99, 30, 82, 32, 10, None, None, 1
+
+99, 33, 90, 35, 8, None, None, 1
+
+99, 37, 99, 41, 1, None, None, 1
+
+100, 41, 108, 41, 2, None, None, 1
+
+100, 45, 117, 48, 1, None, None, 1
+
+100, 50, 130, 54, 0, None, None, 1
+
+100, 55, 145, 61, 0, None, None, 1
+
+100, 60, 160, 65, 0, None, None, 1
+
+99, 65, 175, 77, 0, None, None, 1
+
+99, 75, 210, 88, 0, None, None, 1
+
+95, 85, 245, 103, 0, None, None, 1
+
+94, 95, 280, 115, 0, None, None, 1
+
+92, 105, 315, 134, 0, None, None, 1
+
+98, 12, 36, 15, 33, None, None, 1
+
+98, 12, 43, 16, 13, None, None, 1
+
+95, 12, 49, 16, 3, None, None, 1
+
+97, 12, 55, 20, 36, None, None, 1
+
+93, 12, 60, 21, 21, None, None, 1
+
+89, 12, 66, 22, 7, None, None, 1
+
+85, 12, 72, 25, 15, None, None, 1
+
+80, 12, 75, 23, 2, None, None, 1
