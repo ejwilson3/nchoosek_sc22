@@ -3,7 +3,7 @@ import sys
 import qiskit
 from qiskit.utils import QuantumInstance
 import datetime
-sys.path.append('NchooseK')
+sys.path.append('/Users/ejwilson/nchoosek/NchooseK')
 import nchoosek
 import re
 import random
@@ -154,11 +154,11 @@ def write_out(times, results, total_counts, envs, good_counts, n_qubs, opt_count
         for idx, result in enumerate(results):
             f.write(str(result) + "\n")
             f.write(str(total_counts[idx]) + "\n")
-    print(str(good_counts) + ", " + \
-          str(n_qubs) + ", " + \
-          str(opt_counts) + ", " + \
-          str(n_jobs) + ", " + \
-          str(depths) + ", ")
+    # print(str(good_counts) + ", " + \
+          # str(n_qubs) + ", " + \
+          # str(opt_counts) + ", " + \
+          # str(n_jobs) + ", " + \
+          # str(depths) + ", ")
     for idx, env in enumerate(envs):
         good = []
         bad = []
@@ -265,12 +265,17 @@ def run_graph(V, E, nCliques, solver, simulator=False, color=True, time_filename
             opt_counts.append(count)
             good_counts.append(v)
             n_qubs.append(res.qubits)
-            depths.append(res.depth)
-            if res.jobIDs:
-                n_jobs.append(len(res.jobIDs))
+            if solver=='qiskit':
+                depths.append(res.depth)
+                if res.jobIDs:
+                    n_jobs.append(len(res.jobIDs))
+                else:
+                    n_jobs.append(0)
+                job_ids.append(res.jobIDs)
             else:
+                depths.append(0)
                 n_jobs.append(0)
-            job_ids.append(res.jobIDs)
+                job_ids.append(None)
             times.append(datetime.datetime.now())
         else:
             results.append(None)
@@ -360,12 +365,17 @@ def run_other(E, S, constraints, solver, simulator=False,
         opt_counts.append(count)
         good_counts.append(v)
         n_qubs.append(res.qubits)
-        depths.append(res.depth)
-        if res.jobIDs:
-            n_jobs.append(len(res.jobIDs))
+        if solver=='qiskit':
+            depths.append(res.depth)
+            if res.jobIDs:
+                n_jobs.append(len(res.jobIDs))
+            else:
+                n_jobs.append(0)
+            job_ids.append(res.jobIDs)
         else:
+            depths.append(0)
             n_jobs.append(0)
-        job_ids.append(res.jobIDs)
+            job_ids.append(None)
         times.append(datetime.datetime.now())
     write_out(times, results, total_counts, envs, good_counts,
               n_qubs, opt_counts, n_jobs, depths, 4, len(envs),
@@ -388,16 +398,18 @@ if __name__ == '__main__':
 
     if solver == 'qiskit':    
         qiskit.IBMQ.load_account()
+#########################Change provider here###################################
         provider = qiskit.IBMQ.get_provider(hub='ibm-q', group='open', project='main')
+################################################################################
         if simulator:
             device = qiskit.Aer.get_backend('qasm_simulator')
             nqubs = 21
             # device = provider.get_backend('ibmq_qasm_simulator')
         else:
-    #########################Change machine here####################################
+#########################Change machine here####################################
             device = provider.get_backend('ibmq_guadalupe')
             nqubs = device.configuration().n_qubits
-    ################################################################################
+################################################################################
         quantum_instance = QuantumInstance(device)
     else:
         quantum_instance = None
@@ -460,8 +472,8 @@ if __name__ == '__main__':
         ('bt', 'bw'), ('bu', 'bx'), ('bv', 'by'), ('bw', 'bz'), ('bx', 'ca'),
         ('by', 'cb'), ('bz', 'cd'), ('ca', 'bt'), ('cb', 'bu'), ('cd', 'bv'),
         ('bt', 'at'), ('bv', 'av'), ('bx', 'ax'), ('bz', 'az'), ('cb', 'ab')]
-    edge_length = [3, 8, 13, 18, 23, 28, 37, 42, 47, 52, 57, 62, 67, 72, 80, 90, 100, 110, 135, 160, 185, 210]
-    for i, j in enumerate([3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 37, 41, 45, 50, 55, 60, 65, 75, 85, 95, 105]):
+    edge_length = [3, 8, 13, 18]#, 23, 28, 37, 42, 47, 52, 57, 62, 67, 72, 80, 90, 100, 110, 135, 160, 185, 210]
+    for i, j in enumerate([3, 6, 9, 12]):#, 15, 18, 21, 24, 27, 30, 33, 37, 41, 45, 50, 55, 60, 65, 75, 85, 95, 105]):
         if j > nqubs:
             break 
         run_graph(V[:j], E[:edge_length[i]], i+1, solver, simulator=simulator, quantum_instance=quantum_instance, nQubs=nqubs)
@@ -479,8 +491,8 @@ if __name__ == '__main__':
         ('i', 'c'), ('d', 'k'), ('b', 'f'), ('l', 'h'), ('b', 'i'),
         ('c', 'k'), ('i', 'e'), ('f', 'j'), ('b', 'd'), ('c', 'e'),
         ('f', 'k'), ('l', 'd'), ('l', 'e')]
-    edge_length = [24, 31, 37, 43, 48, 54, 60, 63]
-    for i, j in enumerate([12, 12, 12, 12, 12, 12, 12, 12]):
+    edge_length = [24, 31, 37, 43]#, 48, 54, 60, 63]
+    for i, j in enumerate([12, 12, 12, 12]):#, 12, 12, 12, 12]):
         if j > nqubs:
             break 
         if i > 2:

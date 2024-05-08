@@ -1,4 +1,5 @@
 #!/bin/bash
+date=$(date +%a%d%b)
 echo '========================================='
 echo 'Installing NchooseK'
 echo '========================================='
@@ -40,5 +41,8 @@ echo 'Creating Plots'
 echo '========================================='
 python3 rearrange.py
 gnuplot plots.plot
+mkdir run_$date
+mv *.dat run_$date
+mv *.png run_$date
 echo 'Done!'
 echo '========================================='
