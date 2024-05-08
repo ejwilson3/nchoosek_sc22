@@ -1,5 +1,5 @@
 #!/bin/bash
-date=$(date +%a%d%b)
+date=$(date +%a%d%b_%H-%M)
 echo '========================================='
 echo 'Installing NchooseK'
 echo '========================================='
